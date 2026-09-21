@@ -1,0 +1,37 @@
+<Window x:Class="ThreadsManagerUI.ImportAccountWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Import Account" Height="500" Width="850" WindowStartupLocation="CenterOwner" Background="White" Icon="logo.jpg">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="150"/> <!-- Giới hạn chiều cao cho TextBox -->
+            <RowDefinition Height="*"/> <!-- Nhường toàn bộ khoảng trống còn lại cho Preview DataGrid -->
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Tiêu đề và Checkbox -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,5">
+            <TextBlock Text="Dữ liệu đầu vào" Margin="0,0,20,0" VerticalAlignment="Center" Foreground="#555"/>
+            <CheckBox Content="Định dạng thông minh (Auto Detect)" IsChecked="True" VerticalAlignment="Center" Foreground="#0078D7"/>
+        </StackPanel>
+
+        <!-- Khu vực nhập liệu -->
+        <TextBox x:Name="TxtInputData" Grid.Row="1" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Margin="0,0,0,15" BorderBrush="#CCCCCC" TextChanged="TxtInputData_TextChanged"/>
+
+        <!-- Bảng hiển thị preview data -->
+        <DataGrid x:Name="DgPreview" Grid.Row="2" Margin="0,0,0,20" 
+                  AutoGenerateColumns="False" CanUserAddRows="False" 
+                  Background="White" BorderBrush="#E0E0E0" HeadersVisibility="Column"
+                  GridLinesVisibility="All" HorizontalGridLinesBrush="#E0E0E0" VerticalGridLinesBrush="#E0E0E0">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="UID" Binding="{Binding Uid}" Width="*"/>
+                <DataGridTextColumn Header="Pass" Binding="{Binding Password}" Width="*"/>
+                <DataGridTextColumn Header="Cookie" Binding="{Binding Cookie}" Width="2*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Nút Import -->
+        <Button Grid.Row="3" Content="Import" HorizontalAlignment="Right" Padding="40,8" Background="#F5F6F8" BorderBrush="#CCCCCC" Cursor="Hand" Click="BtnImport_Click"/>
+    </Grid>
+</Window>

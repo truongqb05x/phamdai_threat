@@ -1,0 +1,32 @@
+<Window x:Class="ThreadsManagerUI.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Cài đặt hệ thống" Height="300" Width="450" WindowStartupLocation="CenterOwner" Background="White" Icon="logo.jpg">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Tiêu đề -->
+        <TextBlock Grid.Row="0" Text="Cấu hình hệ thống" FontWeight="Bold" FontSize="18" Foreground="#333" Margin="0,0,0,20"/>
+
+        <!-- Đường dẫn Profile -->
+        <TextBlock Grid.Row="1" Text="Đường dẫn profile:" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#555"/>
+        <TextBox x:Name="TxtProfilePath" Grid.Row="2" Padding="8" Margin="0,0,0,15" BorderBrush="#CCCCCC" Background="#F5F5F5"/>
+
+        <!-- Tùy chọn Proxy -->
+        <TextBlock Grid.Row="3" Text="Chọn loại Proxy:" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#555"/>
+        <ComboBox x:Name="CboProxyType" Grid.Row="4" Padding="8" BorderBrush="#CCCCCC" SelectedIndex="0" VerticalAlignment="Top">
+            <ComboBoxItem Content="Không dùng"/>
+            <ComboBoxItem Content="Proxy tĩnh"/>
+        </ComboBox>
+
+        <!-- Nút Lưu -->
+        <Button Grid.Row="5" Content="Lưu Cài Đặt" HorizontalAlignment="Right" Padding="30,8" Background="#1877F2" Foreground="White" BorderBrush="Transparent" Cursor="Hand" Click="BtnSave_Click"/>
+    </Grid>
+</Window>
