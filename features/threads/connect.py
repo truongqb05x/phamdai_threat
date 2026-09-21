@@ -1,8 +1,9 @@
 import time
 import os
 from utils.driver_utils import create_driver
+from config import config
 
-def connect_threads(uid, cookies):
+def connect_threads(uid, cookies, proxy_str=None, ua_str=None):
     """
     Khởi tạo trình duyệt, nạp cookie Instagram và điều hướng sang Threads.
     Returns:
@@ -14,10 +15,32 @@ def connect_threads(uid, cookies):
     if uid:
         user_data_dir = os.path.join(os.getcwd(), "profiles", uid)
         print(f"📁 Profile: {user_data_dir}")
+        
+    proxy_config = None
+    proxy_type = getattr(config, 'PROXY_TYPE', 0)
+    
+    if proxy_type != 0 and proxy_str:
+        proxy_parts = proxy_str.split(":")
+        if len(proxy_parts) >= 4:
+            proxy_config = {
+                "host": proxy_parts[0].strip(),
+                "port": proxy_parts[1].strip(),
+                "user": proxy_parts[2].strip(),
+                "pass": proxy_parts[3].strip()
+            }
+        elif len(proxy_parts) >= 2:
+            proxy_config = {
+                "host": proxy_parts[0].strip(),
+                "port": proxy_parts[1].strip(),
+                "user": "",
+                "pass": ""
+            }
+    elif proxy_type == 0:
+        print("⚠️ Cấu hình đang chọn 'Không dùng Proxy'.")
 
     driver = None
     try:
-        driver, wait, proxy_config = create_driver(user_data_dir=user_data_dir)
+        driver, wait, proxy_config = create_driver(user_data_dir=user_data_dir, proxy_config=proxy_config, user_agent=ua_str)
         
         if proxy_config:
             print(f"✅ Proxy: {proxy_config.get('host')}:{proxy_config.get('port')}")
@@ -35,6 +58,12 @@ def connect_threads(uid, cookies):
             if driver.get_cookie("sessionid"):
                 is_logged_in = True
                 print("⚡ Profile đã lưu phiên đăng nhập, bỏ qua bước nạp Cookie mới!")
+                
+                # Vẫn phải kiểm tra nếu cookie còn sống nhưng bị suspended
+                if "accounts/suspended" in driver.current_url.lower():
+                    print("[ACCOUNT_DIE]")
+                    print("❌ Tài khoản đã bị đình chỉ (Suspended)!")
+                    return False
         
         if not is_logged_in:
             if cookies:
@@ -50,7 +79,13 @@ def connect_threads(uid, cookies):
                 time.sleep(5) # Đợi trang load xong để kiểm tra trạng thái
                 
                 # Kiểm tra lại trạng thái đăng nhập
-                if "login" in driver.current_url.lower() or not driver.get_cookie("sessionid"):
+                current_url = driver.current_url.lower()
+                if "accounts/suspended" in current_url:
+                    print("[ACCOUNT_DIE]")
+                    print("❌ Tài khoản đã bị đình chỉ (Suspended)!")
+                    return False
+                    
+                if "login" in current_url or not driver.get_cookie("sessionid"):
                     print("❌ Cookie đã chết (bị đá ra trang Login).")
                     return False
                 
@@ -100,3 +135,48 @@ def connect_threads(uid, cookies):
                 driver.quit()
             except:
                 pass
+
+def open_chrome_only(uid, proxy_str=None, ua_str=None):
+    """
+    Chỉ mở trình duyệt Chrome với profile, không thực hiện tác vụ nào cả.
+    """
+    user_data_dir = None
+    if uid:
+        user_data_dir = os.path.join(os.getcwd(), "profiles", uid)
+        
+    proxy_config = None
+    proxy_type = getattr(config, 'PROXY_TYPE', 0)
+    
+    if proxy_type != 0 and proxy_str:
+        proxy_parts = proxy_str.split(":")
+        if len(proxy_parts) >= 4:
+            proxy_config = {
+                "host": proxy_parts[0].strip(),
+                "port": proxy_parts[1].strip(),
+                "user": proxy_parts[2].strip(),
+                "pass": proxy_parts[3].strip()
+            }
+        elif len(proxy_parts) >= 2:
+            proxy_config = {
+                "host": proxy_parts[0].strip(),
+                "port": proxy_parts[1].strip(),
+                "user": "",
+                "pass": ""
+            }
+
+    try:
+        driver, wait, proxy_config = create_driver(user_data_dir=user_data_dir, proxy_config=proxy_config, user_agent=ua_str)
+        
+        print("[CHROME_READY]")
+        
+        # Giữ script chạy để không bị đóng Chrome
+        while True:
+            try:
+                _ = driver.window_handles
+                time.sleep(1)
+            except Exception:
+                break
+                
+    except Exception as e:
+        print("[CHROME_ERROR]")
+        pass

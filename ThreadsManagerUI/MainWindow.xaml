@@ -10,225 +10,487 @@
     <Grid Background="#F5F6F8">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/> <!-- Header/Tabs -->
-            <RowDefinition Height="Auto"/> <!-- Sub Header / Filter -->
-            <RowDefinition Height="*"/>    <!-- Main Content -->
+            <RowDefinition Height="*"/>    <!-- Content Area -->
         </Grid.RowDefinitions>
 
         <!-- Top Menu / Tabs -->
         <Border Grid.Row="0" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Background="White">
             <StackPanel Orientation="Horizontal" Margin="10,5">
-                <Button Content="Kết Nối Threads" Padding="15,8" Background="#1877F2" Foreground="White" BorderThickness="0" Margin="0,0,5,0" FontWeight="Bold"/>
-                <Button Content="Đăng Bài (Post)" Padding="15,8" Background="Transparent" BorderThickness="0" Margin="0,0,5,0"/>
-                <Button Content="Nuôi Tài Khoản" Padding="15,8" Background="Transparent" BorderThickness="0" Margin="0,0,5,0"/>
+                <Button x:Name="BtnTabKetNoi" Content="Home" Padding="15,8" Background="#1877F2" Foreground="White" BorderThickness="0" Margin="0,0,5,0" FontWeight="Bold" Click="BtnTabKetNoi_Click"/>
+                <Button x:Name="BtnTabDangBai" Content="Đăng Bài (Post)" Padding="15,8" Background="Transparent" Foreground="Black" BorderThickness="0" Margin="0,0,5,0" FontWeight="Normal" Click="BtnTabDangBai_Click"/>
+                <Button x:Name="BtnTabConnectThreads" Content="Kết nối thread" Padding="15,8" Background="Transparent" Foreground="Black" BorderThickness="0" Margin="0,0,5,0" FontWeight="Normal" Click="BtnTabConnectThreads_Click"/>
                 <Button Content="Cấu Hình Hệ Thống" Padding="15,8" Background="Transparent" BorderThickness="0"/>
             </StackPanel>
         </Border>
 
-        <!-- Toolbar / Filter -->
-        <Border Grid.Row="1" Background="White" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Padding="10">
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="Lọc:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                <ComboBox x:Name="CboStatusFilter" Width="120" Margin="0,0,10,0" SelectedIndex="0" SelectionChanged="CboStatusFilter_SelectionChanged">
-                    <ComboBoxItem Content="All Status"/>
-                    <ComboBoxItem Content="Live"/>
-                    <ComboBoxItem Content="Dead"/>
-                </ComboBox>
-                
-                <ComboBox Width="120" Margin="0,0,10,0" SelectedIndex="0">
-                    <ComboBoxItem Content="All Folder"/>
-                </ComboBox>
-                
-                <TextBlock Text="Tìm kiếm:" VerticalAlignment="Center" Margin="10,0,5,0"/>
-                <TextBox x:Name="TxtSearch" Width="200" VerticalContentAlignment="Center" Margin="0,0,10,0" TextChanged="TxtSearch_TextChanged"/>
-                <Button Content="Tìm" Padding="15,5" Margin="0,0,10,0" Click="BtnSearch_Click"/>
-            </StackPanel>
-        </Border>
-
         <!-- Main Content Area -->
-        <Grid Grid.Row="2" Margin="10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="250"/>
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
+        <Grid Grid.Row="1">
+            
+            <!-- TAB 1: KẾT NỐI THREADS -->
+            <Grid x:Name="GridKetNoiThreads" Visibility="Visible">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/> <!-- Sub Header / Filter -->
+                    <RowDefinition Height="*"/>    <!-- Main DataGrid -->
+                </Grid.RowDefinitions>
 
-            <!-- Trạng thái chọn -->
-            <TextBlock x:Name="TxtSelectedCount" Grid.Row="0" Grid.Column="0" Text="Đã chọn: 0" FontWeight="Bold" Margin="0,0,0,5" Foreground="#333"/>
-
-            <!-- DataGrid -->
-            <DataGrid x:Name="DgAccounts" Grid.Row="1" Grid.Column="0" ItemsSource="{Binding Accounts}" AutoGenerateColumns="False" CanUserAddRows="False" Background="White" GridLinesVisibility="Horizontal" HeadersVisibility="Column" BorderBrush="#E0E0E0" VerticalGridLinesBrush="#EEEEEE" HorizontalGridLinesBrush="#EEEEEE" SelectionChanged="DgAccounts_SelectionChanged">
-                <DataGrid.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Header="Copy" Click="MenuItem_Copy_Click"/>
-                        <MenuItem Header="Mở Chrome" Click="MenuItem_OpenChrome_Click"/>
-                        <MenuItem Header="Xóa" Click="MenuItem_Delete_Click"/>
-                    </ContextMenu>
-                </DataGrid.ContextMenu>
-                <DataGrid.RowStyle>
-                    <Style TargetType="DataGridRow">
-                        <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        <Setter Property="Background" Value="White"/> 
-                        <Setter Property="Foreground" Value="Black"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding Status}" Value="Live">
-                                <Setter Property="Background" Value="#E6F4EA"/> <!-- Xanh lá nhạt (giống hình) -->
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Status}" Value="Dead">
-                                <Setter Property="Background" Value="#FCE8E6"/> <!-- Đỏ nhạt -->
-                            </DataTrigger>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter Property="Background" Value="#0078D7"/> <!-- Xanh da trời đậm giống Windows -->
-                                <Setter Property="Foreground" Value="White"/>   <!-- Đổi chữ thành màu trắng để dễ đọc -->
-                            </Trigger>
-                            <MultiTrigger>
-                                <MultiTrigger.Conditions>
-                                    <Condition Property="IsMouseOver" Value="True"/>
-                                    <Condition Property="IsSelected" Value="False"/>
-                                </MultiTrigger.Conditions>
-                                <Setter Property="Background" Value="#F5F5F5"/> <!-- Màu hover khi không chọn -->
-                            </MultiTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </DataGrid.RowStyle>
-                <DataGrid.Resources>
-                    <Style TargetType="DataGridColumnHeader">
-                        <Setter Property="Background" Value="#F5F6F8"/>
-                        <Setter Property="Foreground" Value="#666666"/>
-                        <Setter Property="FontWeight" Value="SemiBold"/>
-                        <Setter Property="Padding" Value="10,12"/>
-                        <Setter Property="HorizontalContentAlignment" Value="Left"/>
-                        <Setter Property="BorderBrush" Value="#E0E0E0"/>
-                        <Setter Property="BorderThickness" Value="0,0,1,1"/>
-                    </Style>
-                    <Style TargetType="DataGridCell">
-                        <Setter Property="Padding" Value="5,5"/>
-                        <Setter Property="BorderThickness" Value="0"/>
-                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="DataGridCell">
-                                    <Border Padding="{TemplateBinding Padding}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="Transparent" SnapsToDevicePixels="True">
-                                        <ContentPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="Center"/>
-                                    </Border>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                    </Style>
-                </DataGrid.Resources>
-                <DataGrid.Columns>
-                    <DataGridCheckBoxColumn Header="Chọn" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="50">
-                        <DataGridCheckBoxColumn.ElementStyle>
-                            <Style TargetType="CheckBox">
-                                <Setter Property="HorizontalAlignment" Value="Left"/>
-                                <Setter Property="Margin" Value="10,0,0,0"/>
-                                <Setter Property="VerticalAlignment" Value="Center"/>
-                            </Style>
-                        </DataGridCheckBoxColumn.ElementStyle>
-                    </DataGridCheckBoxColumn>
-                    <DataGridTextColumn Header="STT" Binding="{Binding Index}" Width="50" IsReadOnly="True">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="HorizontalAlignment" Value="Left"/>
-                                <Setter Property="Margin" Value="10,0,0,0"/>
-                                <Setter Property="VerticalAlignment" Value="Center"/>
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
-                    <DataGridTextColumn Header="Username" Binding="{Binding Uid}" Width="150">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Margin" Value="10,0,0,0"/>
-                                <Setter Property="VerticalAlignment" Value="Center"/>
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
-                    <DataGridTextColumn Header="Mật khẩu" Binding="{Binding Password}" Width="100">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Margin" Value="10,0,0,0"/>
-                                <Setter Property="VerticalAlignment" Value="Center"/>
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
-                    <DataGridTextColumn Header="Cookie" Binding="{Binding Cookie}" Width="250">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Margin" Value="10,0,0,0"/>
-                                <Setter Property="VerticalAlignment" Value="Center"/>
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
-                    <DataGridTextColumn Header="Proxy" Binding="{Binding Proxy}" Width="150">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Margin" Value="10,0,0,0"/>
-                                <Setter Property="VerticalAlignment" Value="Center"/>
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
-                    <DataGridTextColumn Header="Trạng thái" Binding="{Binding Status}" Width="*" IsReadOnly="True">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Margin" Value="10,0,0,0"/>
-                                <Setter Property="HorizontalAlignment" Value="Left"/>
-                                <Setter Property="VerticalAlignment" Value="Center"/>
-                                <!-- Text tự động lấy màu tương phản hoặc mặc định -->
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
-                </DataGrid.Columns>
-            </DataGrid>
-
-            <!-- Right Sidebar -->
-            <StackPanel Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" Margin="10,0,0,0">
-                <!-- Action Buttons -->
-                <Border Background="White" BorderBrush="#E0E0E0" BorderThickness="1" Padding="10" Margin="0,0,0,15">
-                    <StackPanel>
-                        <Button Content="Thêm Tài Khoản" Padding="10" Margin="0,0,0,10" Background="White" BorderBrush="#CCCCCC" Click="BtnImportAccount_Click"/>
-                        <Button Content="Import Từ File" Padding="10" Margin="0,0,0,10" Background="White" BorderBrush="#CCCCCC" Click="BtnImportFromFile_Click"/>
-                        <Button Content="⚙ Cài đặt" Padding="10" Background="White" BorderBrush="#1877F2" Foreground="#1877F2" Click="BtnSettings_Click"/>
+                <!-- Toolbar / Filter -->
+                <Border Grid.Row="0" Background="White" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Padding="10">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Lọc:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <ComboBox x:Name="CboStatusFilter" Width="120" Margin="0,0,10,0" SelectedIndex="0" SelectionChanged="CboStatusFilter_SelectionChanged">
+                            <ComboBoxItem Content="All Status"/>
+                            <ComboBoxItem Content="Live"/>
+                            <ComboBoxItem Content="Dead"/>
+                        </ComboBox>
+                        
+                        <ComboBox Width="120" Margin="0,0,10,0" SelectedIndex="0">
+                            <ComboBoxItem Content="All Folder"/>
+                        </ComboBox>
+                        
+                        <TextBlock Text="Tìm kiếm:" VerticalAlignment="Center" Margin="10,0,5,0"/>
+                        <TextBox x:Name="TxtSearch" Width="200" VerticalContentAlignment="Center" Margin="0,0,10,0" TextChanged="TxtSearch_TextChanged"/>
+                        <Button Content="Tìm" Padding="15,5" Margin="0,0,10,0" Click="BtnSearch_Click"/>
                     </StackPanel>
                 </Border>
 
-                <!-- Statistics -->
-                <Border Background="White" BorderBrush="#E0E0E0" BorderThickness="1" Padding="15">
-                    <StackPanel>
-                        <TextBlock Text="Thống kê thư mục" FontWeight="Bold" FontSize="14" Margin="0,0,0,15"/>
-                        
-                        <Grid Margin="0,0,0,8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="Live" Foreground="#757575"/>
-                            <TextBlock Grid.Column="1" Text="{Binding LiveAccounts}" FontWeight="Bold" Foreground="#1877F2"/>
-                        </Grid>
-                        
-                        <Grid Margin="0,0,0,15">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="Dead / Spam" Foreground="#757575"/>
-                            <TextBlock Grid.Column="1" Text="1" FontWeight="Bold" Foreground="#E53935"/>
-                        </Grid>
-                        
-                        <Separator Margin="0,0,0,10"/>
+                <!-- Main Content Area (DataGrid + Sidebar) -->
+                <Grid Grid.Row="1" Margin="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="250"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="Tổng tài khoản" FontWeight="Bold"/>
-                            <TextBlock Grid.Column="1" Text="{Binding TotalAccounts}" FontWeight="Bold" Foreground="#E53935"/>
-                        </Grid>
+                    <!-- Trạng thái chọn -->
+                    <TextBlock x:Name="TxtSelectedCount" Grid.Row="0" Grid.Column="0" Text="Đã chọn: 0" FontWeight="Bold" Margin="0,0,0,5" Foreground="#333"/>
+
+                    <!-- DataGrid -->
+                    <DataGrid x:Name="DgAccounts" Grid.Row="1" Grid.Column="0" ItemsSource="{Binding Accounts}" AutoGenerateColumns="False" CanUserAddRows="False" Background="White" GridLinesVisibility="Horizontal" HeadersVisibility="Column" BorderBrush="#E0E0E0" VerticalGridLinesBrush="#EEEEEE" HorizontalGridLinesBrush="#EEEEEE" SelectionChanged="DgAccounts_SelectionChanged">
+                        <DataGrid.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Copy" Click="MenuItem_Copy_Click"/>
+                                <MenuItem Header="Mở Chrome" Click="MenuItem_OpenChrome_Click"/>
+                                <MenuItem Header="Xóa" Click="MenuItem_Delete_Click"/>
+                            </ContextMenu>
+                        </DataGrid.ContextMenu>
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow">
+                                <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                <Setter Property="Background" Value="White"/> 
+                                <Setter Property="Foreground" Value="Black"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Status}" Value="Live">
+                                        <Setter Property="Background" Value="#E6F4EA"/> <!-- Xanh lá nhạt (giống hình) -->
+                                    </DataTrigger>
+                                      <DataTrigger Binding="{Binding Status}" Value="Die">
+                                          <Setter Property="Background" Value="#FCE8E6"/> <!-- Đỏ nhạt -->
+                                      </DataTrigger>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="#0078D7"/> <!-- Xanh da trời đậm giống Windows -->
+                                        <Setter Property="Foreground" Value="White"/>   <!-- Đổi chữ thành màu trắng để dễ đọc -->
+                                    </Trigger>
+                                    <MultiTrigger>
+                                        <MultiTrigger.Conditions>
+                                            <Condition Property="IsMouseOver" Value="True"/>
+                                            <Condition Property="IsSelected" Value="False"/>
+                                        </MultiTrigger.Conditions>
+                                        <Setter Property="Background" Value="#F5F5F5"/> <!-- Màu hover khi không chọn -->
+                                    </MultiTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.RowStyle>
+                        <DataGrid.Resources>
+                            <Style TargetType="DataGridColumnHeader">
+                                <Setter Property="Background" Value="#F5F6F8"/>
+                                <Setter Property="Foreground" Value="#666666"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Setter Property="Padding" Value="10,12"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                                <Setter Property="BorderBrush" Value="#E0E0E0"/>
+                                <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                            </Style>
+                            <Style TargetType="DataGridCell">
+                                <Setter Property="Padding" Value="5,5"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="DataGridCell">
+                                            <Border Padding="{TemplateBinding Padding}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="Transparent" SnapsToDevicePixels="True">
+                                                <ContentPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </DataGrid.Resources>
+                        <DataGrid.Columns>
+                            <DataGridCheckBoxColumn Header="Chọn" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="50">
+                                <DataGridCheckBoxColumn.ElementStyle>
+                                    <Style TargetType="CheckBox">
+                                        <Setter Property="HorizontalAlignment" Value="Left"/>
+                                        <Setter Property="Margin" Value="10,0,0,0"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridCheckBoxColumn.ElementStyle>
+                            </DataGridCheckBoxColumn>
+                            <DataGridTextColumn Header="STT" Binding="{Binding Index}" Width="50" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="HorizontalAlignment" Value="Left"/>
+                                        <Setter Property="Margin" Value="10,0,0,0"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Username" Binding="{Binding Uid}" Width="150">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Margin" Value="10,0,0,0"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Mật khẩu" Binding="{Binding Password}" Width="100">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Margin" Value="10,0,0,0"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Cookie" Binding="{Binding Cookie}" Width="250">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Margin" Value="10,0,0,0"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Proxy" Binding="{Binding Proxy}" Width="150">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Margin" Value="10,0,0,0"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Trạng thái" Binding="{Binding Status}" Width="*" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Margin" Value="10,0,0,0"/>
+                                        <Setter Property="HorizontalAlignment" Value="Left"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Right Sidebar -->
+                    <StackPanel Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" Margin="10,0,0,0">
+                        <!-- Action Buttons -->
+                        <Border Background="White" BorderBrush="#E0E0E0" BorderThickness="1" Padding="10" Margin="0,0,0,15">
+                            <StackPanel>
+                                <Button Content="Thêm Tài Khoản" Padding="10" Margin="0,0,0,10" Background="White" BorderBrush="#CCCCCC" Click="BtnImportAccount_Click"/>
+                                <Button Content="Import Từ File" Padding="10" Margin="0,0,0,10" Background="White" BorderBrush="#CCCCCC" Click="BtnImportFromFile_Click"/>
+                                <Button Content="⚙ Cài đặt" Padding="10" Background="White" BorderBrush="#1877F2" Foreground="#1877F2" Click="BtnSettings_Click"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Statistics -->
+                        <Border Background="White" BorderBrush="#E0E0E0" BorderThickness="1" Padding="15">
+                            <StackPanel>
+                                <TextBlock Text="Thống kê thư mục" FontWeight="Bold" FontSize="14" Margin="0,0,0,15"/>
+                                
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Live" Foreground="#757575"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding LiveAccounts}" FontWeight="Bold" Foreground="#1877F2"/>
+                                </Grid>
+                                
+                                <Grid Margin="0,0,0,15">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Dead / Spam" Foreground="#757575"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding DeadAccounts}" FontWeight="Bold" Foreground="#E53935"/>
+                                </Grid>
+                                
+                                <Separator Margin="0,0,0,10"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Tổng tài khoản" FontWeight="Bold"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding TotalAccounts}" FontWeight="Bold" Foreground="#E53935"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
+                </Grid>
+            </Grid>
+
+            <!-- TAB 2: ĐĂNG BÀI (POST) -->
+            <Grid x:Name="GridDangBai" Visibility="Collapsed" Margin="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="350"/> <!-- Cột trái: chọn account -->
+                    <ColumnDefinition Width="*"/>   <!-- Cột phải: cấu hình -->
+                </Grid.ColumnDefinitions>
+
+                <!-- Cột trái: Chọn tài khoản -->
+                <Border Grid.Column="0" Background="White" BorderBrush="#E0E0E0" BorderThickness="1" Margin="0,0,10,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        
+                        <StackPanel Grid.Row="0" Margin="10">
+                            <Button Content="Chọn Tài Khoản" Background="#1877F2" Foreground="White" FontWeight="Bold" Padding="10" Click="BtnSelectAccountsForPost_Click" BorderThickness="0"/>
+                            <TextBlock Text="Danh sách tài khoản chờ đăng:" Margin="0,15,0,5" FontWeight="SemiBold" Foreground="#555"/>
+                        </StackPanel>
+
+                        <!-- Danh sách account chạy -->
+                        <DataGrid x:Name="DgPostAccounts" Grid.Row="1" ItemsSource="{Binding SelectedAccountsForPost}" AutoGenerateColumns="False" CanUserAddRows="False" Background="White" GridLinesVisibility="All" HeadersVisibility="Column" BorderBrush="#E0E0E0" VerticalGridLinesBrush="#EEEEEE" HorizontalGridLinesBrush="#EEEEEE" BorderThickness="0,1,0,0">
+                            <DataGrid.Resources>
+                                <Style TargetType="DataGridColumnHeader">
+                                    <Setter Property="Background" Value="#F5F6F8"/>
+                                    <Setter Property="Foreground" Value="#666666"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="Padding" Value="10,8"/>
+                                    <Setter Property="BorderBrush" Value="#E0E0E0"/>
+                                    <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                                </Style>
+                                <Style TargetType="DataGridCell">
+                                    <Setter Property="Padding" Value="5,5"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                </Style>
+                            </DataGrid.Resources>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="STT" Binding="{Binding Index}" Width="50" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Username" Binding="{Binding Uid}" Width="*" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Quá trình" Binding="{Binding PostProcessStatus}" Width="80" IsReadOnly="True">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="TextAlignment" Value="Center"/>
+                                            <Setter Property="Foreground" Value="#1877F2"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding PostProcessStatus}" Value="Xong">
+                                                    <Setter Property="Foreground" Value="#4CAF50"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding PostProcessStatus}" Value="Die">
+                                                    <Setter Property="Foreground" Value="#F44336"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTemplateColumn Width="50">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="Xóa" Foreground="Red" Background="Transparent" BorderThickness="0" Click="BtnRemovePostAccount_Click" ToolTip="Xóa khỏi danh sách chờ"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
                 </Border>
-            </StackPanel>
+
+                <!-- Cột phải: Cấu hình đăng bài và Log -->
+                <Border Grid.Column="1" Background="White" BorderBrush="#E0E0E0" BorderThickness="1">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/> <!-- Cấu hình -->
+                            <RowDefinition Height="Auto"/> <!-- Nút điều khiển -->
+                            <RowDefinition Height="*"/>    <!-- Box Log -->
+                        </Grid.RowDefinitions>
+
+                        <!-- Panel Cấu hình -->
+                        <StackPanel Grid.Row="0" Margin="15">
+                            <TextBlock Text="Nội dung bài đăng:" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#333"/>
+                            <TextBox x:Name="TxtPostContent" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="100" Padding="10" BorderBrush="#CCCCCC" Margin="0,0,0,15" Background="#F5F5F5"/>
+
+                            <TextBlock Text="Hình ảnh/Video (Thư mục hoặc File):" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#333"/>
+                            <Grid Margin="0,0,0,15">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="TxtMediaPath" Padding="8" BorderBrush="#CCCCCC" Background="#F5F5F5" Grid.Column="0"/>
+                                <Button Content="Chọn" Grid.Column="1" Margin="5,0,0,0" Padding="15,0" Click="BtnSelectMedia_Click"/>
+                            </Grid>
+
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Khoảng cách giữa 2 bài đăng:" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,10,0"/>
+                                <TextBox x:Name="TxtDelayMin" Text="10" Width="50" Padding="5" TextAlignment="Center"/>
+                                <TextBlock Text="đến" VerticalAlignment="Center" Margin="5,0"/>
+                                <TextBox x:Name="TxtDelayMax" Text="20" Width="50" Padding="5" TextAlignment="Center"/>
+                                <TextBlock Text="giây" VerticalAlignment="Center" Margin="5,0"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,15,0,0">
+                                <TextBlock Text="Số luồng (Threads):" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,10,0"/>
+                                <TextBox x:Name="TxtThreadCount" Text="1" Width="50" Padding="5" TextAlignment="Center"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Thanh điều khiển -->
+                        <Border Grid.Row="1" Background="#F5F6F8" BorderBrush="#E0E0E0" BorderThickness="0,1,0,1" Padding="15,10">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button Content="▶ Chạy Đăng Bài" Background="#4CAF50" Foreground="White" FontWeight="Bold" Padding="20,10" Margin="0,0,10,0" BorderThickness="0" Click="BtnStartPost_Click"/>
+                                <Button Content="⏹ Dừng Lại" Background="#F44336" Foreground="White" FontWeight="Bold" Padding="20,10" BorderThickness="0" Click="BtnStopPost_Click"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Box Logs -->
+                        <Grid Grid.Row="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Text="Nhật ký hoạt động (Logs):" FontWeight="SemiBold" Margin="15,10,0,5" Foreground="#555"/>
+                            <TextBox x:Name="TxtLogs" Grid.Row="1" Background="White" Foreground="Black" BorderBrush="#CCCCCC" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Margin="15,0,15,15" Padding="10"/>
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+            
+            <!-- TAB 3: KẾT NỐI THREADS (Tương tác) -->
+            <Grid x:Name="GridConnectThreads" Visibility="Collapsed" Margin="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="350"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Cột trái: Chọn tài khoản -->
+                <Border Grid.Column="0" Background="White" BorderBrush="#E0E0E0" BorderThickness="1" Margin="0,0,10,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        
+                        <StackPanel Grid.Row="0" Margin="10">
+                            <Button Content="Chọn Tài Khoản" Background="#1877F2" Foreground="White" FontWeight="Bold" Padding="10" Click="BtnSelectAccountsForConnect_Click" BorderThickness="0"/>
+                            <TextBlock Text="Danh sách tài khoản kết nối:" Margin="0,15,0,5" FontWeight="SemiBold" Foreground="#555"/>
+                        </StackPanel>
+
+                        <!-- Danh sách account chạy kết nối -->
+                        <DataGrid x:Name="DgConnectAccounts" Grid.Row="1" ItemsSource="{Binding SelectedAccountsForConnect}" AutoGenerateColumns="False" CanUserAddRows="False" Background="White" GridLinesVisibility="All" HeadersVisibility="Column" BorderBrush="#E0E0E0" VerticalGridLinesBrush="#EEEEEE" HorizontalGridLinesBrush="#EEEEEE" BorderThickness="0,1,0,0">
+                            <DataGrid.Resources>
+                                <Style TargetType="DataGridColumnHeader">
+                                    <Setter Property="Background" Value="#F5F6F8"/>
+                                    <Setter Property="Foreground" Value="#666666"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="Padding" Value="10,8"/>
+                                    <Setter Property="BorderBrush" Value="#E0E0E0"/>
+                                    <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                                </Style>
+                                <Style TargetType="DataGridCell">
+                                    <Setter Property="Padding" Value="5,5"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                </Style>
+                            </DataGrid.Resources>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="STT" Binding="{Binding Index}" Width="50" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Username" Binding="{Binding Uid}" Width="*" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Quá trình" Binding="{Binding PostProcessStatus}" Width="80" IsReadOnly="True">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="TextAlignment" Value="Center"/>
+                                            <Setter Property="Foreground" Value="#1877F2"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding PostProcessStatus}" Value="Xong">
+                                                    <Setter Property="Foreground" Value="#4CAF50"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding PostProcessStatus}" Value="Die">
+                                                    <Setter Property="Foreground" Value="#F44336"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTemplateColumn Width="50">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="Xóa" Foreground="Red" Background="Transparent" BorderThickness="0" Click="BtnRemoveConnectAccount_Click" ToolTip="Xóa khỏi danh sách chờ"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- Cột phải: Cấu hình và Log -->
+                <Border Grid.Column="1" Background="White" BorderBrush="#E0E0E0" BorderThickness="1">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Panel Cấu hình -->
+                        <StackPanel Grid.Row="0" Margin="15">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                                <TextBlock Text="Khoảng cách giữa 2 tài khoản:" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,10,0"/>
+                                <TextBox x:Name="TxtConnectDelayMin" Text="10" Width="50" Padding="5" TextAlignment="Center"/>
+                                <TextBlock Text="đến" VerticalAlignment="Center" Margin="5,0"/>
+                                <TextBox x:Name="TxtConnectDelayMax" Text="20" Width="50" Padding="5" TextAlignment="Center"/>
+                                <TextBlock Text="giây" VerticalAlignment="Center" Margin="5,0"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Số luồng (Threads):" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,10,0"/>
+                                <TextBox x:Name="TxtConnectThreadCount" Text="1" Width="50" Padding="5" TextAlignment="Center"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Thanh điều khiển -->
+                        <Border Grid.Row="1" Background="#F5F6F8" BorderBrush="#E0E0E0" BorderThickness="0,1,0,1" Padding="15,10">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button Content="▶ Chạy Kết Nối" Background="#4CAF50" Foreground="White" FontWeight="Bold" Padding="20,10" Margin="0,0,10,0" BorderThickness="0" Click="BtnStartConnect_Click"/>
+                                <Button Content="⏹ Dừng Lại" Background="#F44336" Foreground="White" FontWeight="Bold" Padding="20,10" BorderThickness="0" Click="BtnStopConnect_Click"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Box Logs -->
+                        <Grid Grid.Row="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Text="Nhật ký hoạt động (Logs):" FontWeight="SemiBold" Margin="15,10,0,5" Foreground="#555"/>
+                            <TextBox x:Name="TxtLogsConnect" Grid.Row="1" Background="White" Foreground="Black" BorderBrush="#CCCCCC" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Margin="15,0,15,15" Padding="10"/>
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+            
         </Grid>
+
+        <!-- Loading Overlay -->
+        <Border x:Name="LoadingOverlay" Grid.RowSpan="2" Background="#80000000" Visibility="Collapsed">
+            <Border HorizontalAlignment="Center" VerticalAlignment="Center" Background="White" Padding="30,20" CornerRadius="8">
+                <StackPanel>
+                    <ProgressBar IsIndeterminate="True" Width="200" Height="20" Margin="0,0,0,15" Foreground="#1877F2"/>
+                    <TextBlock x:Name="TxtLoadingStatus" Text="Đang khởi động Chrome..." FontWeight="Bold" FontSize="16" Foreground="#333" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+        </Border>
     </Grid>
 </Window>

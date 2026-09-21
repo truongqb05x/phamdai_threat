@@ -2,7 +2,7 @@
 
 # --- PROFILE CONFIG ---
 # Thư mục chứa profile của Chrome. 
-PROFILE_DIR = "profiles"
+PROFILE_DIR = "D:/starup/pham_dai/profiles"
 
 # --- DRIVER & RESOURCE CONFIG ---
 # Trỏ thủ công đến file chromedriver.exe nếu bản tự động tải về bị lỗi [WinError 193] trên VPS
@@ -13,3 +13,4 @@ RESOURCE_LOGGING = False
 
 # Tải hình ảnh khi chạy trình duyệt
 LOAD_IMAGES = False
+PROXY_TYPE = 1

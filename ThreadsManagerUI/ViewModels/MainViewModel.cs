@@ -8,6 +8,8 @@ namespace ThreadsManagerUI.ViewModels
     public class MainViewModel : INotifyPropertyChanged
     {
         public ObservableCollection<AccountModel> Accounts { get; set; }
+        public ObservableCollection<AccountModel> SelectedAccountsForPost { get; set; }
+        public ObservableCollection<AccountModel> SelectedAccountsForConnect { get; set; }
 
         private int _totalAccounts;
         public int TotalAccounts
@@ -23,9 +25,18 @@ namespace ThreadsManagerUI.ViewModels
             set { _liveAccounts = value; OnPropertyChanged(); }
         }
 
+        private int _deadAccounts;
+        public int DeadAccounts
+        {
+            get => _deadAccounts;
+            set { _deadAccounts = value; OnPropertyChanged(); }
+        }
+
         public MainViewModel()
         {
-            Accounts = new System.Collections.ObjectModel.ObservableCollection<AccountModel>();
+            Accounts = new ObservableCollection<AccountModel>();
+            SelectedAccountsForPost = new ObservableCollection<AccountModel>();
+            SelectedAccountsForConnect = new ObservableCollection<AccountModel>();
             LoadData();
         }
 
@@ -60,7 +71,7 @@ namespace ThreadsManagerUI.ViewModels
                         TwoFA = parts.Length > 6 ? parts[6] : "",
                         Proxy = parts.Length > 7 ? parts[7] : "",
                         UserAgent = parts.Length > 8 ? parts[8] : "",
-                        Status = "All"
+                        Status = parts.Length > 9 ? parts[9] : "Live"
                     };
                     
                     // Lắng nghe sự kiện thay đổi trên từng property để tự động lưu
@@ -108,7 +119,8 @@ namespace ThreadsManagerUI.ViewModels
                     acc.PassEmail ?? "",
                     acc.TwoFA ?? "",
                     acc.Proxy ?? "",
-                    acc.UserAgent ?? ""
+                    acc.UserAgent ?? "",
+                    acc.Status ?? "Live"
                 };
 
                 // Loại bỏ các phần tử rỗng ở cuối (giống như copy)
@@ -131,10 +143,13 @@ namespace ThreadsManagerUI.ViewModels
         {
             TotalAccounts = Accounts.Count;
             int liveCount = 0;
+            int deadCount = 0;
             foreach(var acc in Accounts) {
                 if (acc.Status == "Live") liveCount++;
+                else if (acc.Status == "Die") deadCount++;
             }
             LiveAccounts = liveCount;
+            DeadAccounts = deadCount;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

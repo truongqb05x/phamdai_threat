@@ -169,11 +169,11 @@ def create_driver(user_data_dir=None, proxy_config=None, window_pos=None, user_a
     proxy_config là dict: {"host":..., "port":..., "user":..., "pass":...}
     """
     
-    # Nếu không truyền proxy_config, thử lấy ngẫu nhiên (logic cũ fallback)
-    if not proxy_config:
-        proxies = load_proxies()
-        if proxies:
-            proxy_config = random.choice(proxies)
+    # Không dùng fallback proxy.txt nữa theo yêu cầu
+    # if not proxy_config:
+    #     proxies = load_proxies()
+    #     if proxies:
+    #         proxy_config = random.choice(proxies)
 
     seleniumwire_options = None
     if proxy_config:

@@ -97,6 +97,13 @@ namespace ThreadsManagerUI.Models
             set { _notes = value; OnPropertyChanged(); }
         }
 
+        private string _postProcessStatus = "Chờ";
+        public string PostProcessStatus
+        {
+            get => _postProcessStatus;
+            set { _postProcessStatus = value; OnPropertyChanged(); }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = null)
         {

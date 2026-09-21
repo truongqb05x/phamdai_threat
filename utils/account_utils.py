@@ -39,7 +39,11 @@ def read_all_accounts_data(file_path="resources/account.txt"):
                                 "path": "/",
                                 "expiry": expiry_time
                             })
-                    accounts.append((uid, cookies))
+                    
+                    proxy_str = parts[7].strip() if len(parts) > 7 else None
+                    ua_str = parts[8].strip() if len(parts) > 8 else None
+                    
+                    accounts.append((uid, cookies, proxy_str, ua_str))
                 else:
                     print(f"⚠️ Dòng {i+1} trong file tài khoản không đúng định dạng.")
                     

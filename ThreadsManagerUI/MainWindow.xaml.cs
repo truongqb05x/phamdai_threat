@@ -8,6 +8,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Collections.ObjectModel;
+using System.Linq;
 using ThreadsManagerUI.ViewModels;
 
 namespace ThreadsManagerUI;
@@ -138,7 +140,430 @@ public partial class MainWindow : Window
 
     private void MenuItem_OpenChrome_Click(object sender, RoutedEventArgs e)
     {
-        System.Windows.MessageBox.Show("Chức năng Mở Chrome đang được phát triển!", "Thông báo", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+        var selectedItem = DgAccounts.SelectedItem as Models.AccountModel;
+        if (selectedItem == null || string.IsNullOrEmpty(selectedItem.Uid)) return;
+
+        try
+        {
+            LoadingOverlay.Visibility = System.Windows.Visibility.Visible;
+            TxtLoadingStatus.Text = $"Đang mở Chrome cho {selectedItem.Uid}...";
+
+            string pythonScriptDir = System.IO.Path.GetFullPath(System.IO.Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\.."));
+            
+            var processInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "python",
+                Arguments = $"main.py open_chrome \"{selectedItem.Uid}\"",
+                WorkingDirectory = pythonScriptDir,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                StandardOutputEncoding = System.Text.Encoding.UTF8
+            };
+            
+            var process = new System.Diagnostics.Process();
+            process.StartInfo = processInfo;
+            process.EnableRaisingEvents = true;
+
+            process.OutputDataReceived += (s, args) =>
+            {
+                if (args.Data != null)
+                {
+                    if (args.Data.Contains("[CHROME_READY]") || args.Data.Contains("[CHROME_ERROR]"))
+                    {
+                        Dispatcher.Invoke(() =>
+                        {
+                            LoadingOverlay.Visibility = System.Windows.Visibility.Collapsed;
+                            if (args.Data.Contains("[CHROME_ERROR]"))
+                            {
+                                System.Windows.MessageBox.Show("Có lỗi khi mở Chrome. Vui lòng kiểm tra lại cấu hình.", "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                            }
+                        });
+                    }
+                }
+            };
+            
+            process.Exited += (s, args) =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    LoadingOverlay.Visibility = System.Windows.Visibility.Collapsed;
+                });
+            };
+
+            process.Start();
+            process.BeginOutputReadLine();
+        }
+        catch (System.Exception ex)
+        {
+            LoadingOverlay.Visibility = System.Windows.Visibility.Collapsed;
+            System.Windows.MessageBox.Show("Lỗi khi mở Chrome: " + ex.Message, "Lỗi", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
+    }
+
+    private void BtnTabKetNoi_Click(object sender, RoutedEventArgs e)
+    {
+        GridKetNoiThreads.Visibility = Visibility.Visible;
+        GridDangBai.Visibility = Visibility.Collapsed;
+        GridConnectThreads.Visibility = Visibility.Collapsed;
+        
+        BtnTabKetNoi.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1877F2"));
+        BtnTabKetNoi.Foreground = Brushes.White;
+        BtnTabKetNoi.FontWeight = FontWeights.Bold;
+
+        BtnTabDangBai.Background = Brushes.Transparent;
+        BtnTabDangBai.Foreground = Brushes.Black;
+        BtnTabDangBai.FontWeight = FontWeights.Normal;
+
+        BtnTabConnectThreads.Background = Brushes.Transparent;
+        BtnTabConnectThreads.Foreground = Brushes.Black;
+        BtnTabConnectThreads.FontWeight = FontWeights.Normal;
+    }
+
+    private void BtnTabDangBai_Click(object sender, RoutedEventArgs e)
+    {
+        GridKetNoiThreads.Visibility = Visibility.Collapsed;
+        GridDangBai.Visibility = Visibility.Visible;
+        GridConnectThreads.Visibility = Visibility.Collapsed;
+
+        BtnTabDangBai.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1877F2"));
+        BtnTabDangBai.Foreground = Brushes.White;
+        BtnTabDangBai.FontWeight = FontWeights.Bold;
+
+        BtnTabKetNoi.Background = Brushes.Transparent;
+        BtnTabKetNoi.Foreground = Brushes.Black;
+        BtnTabKetNoi.FontWeight = FontWeights.Normal;
+
+        BtnTabConnectThreads.Background = Brushes.Transparent;
+        BtnTabConnectThreads.Foreground = Brushes.Black;
+        BtnTabConnectThreads.FontWeight = FontWeights.Normal;
+    }
+
+    private void BtnTabConnectThreads_Click(object sender, RoutedEventArgs e)
+    {
+        GridKetNoiThreads.Visibility = Visibility.Collapsed;
+        GridDangBai.Visibility = Visibility.Collapsed;
+        GridConnectThreads.Visibility = Visibility.Visible;
+
+        BtnTabConnectThreads.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1877F2"));
+        BtnTabConnectThreads.Foreground = Brushes.White;
+        BtnTabConnectThreads.FontWeight = FontWeights.Bold;
+
+        BtnTabKetNoi.Background = Brushes.Transparent;
+        BtnTabKetNoi.Foreground = Brushes.Black;
+        BtnTabKetNoi.FontWeight = FontWeights.Normal;
+
+        BtnTabDangBai.Background = Brushes.Transparent;
+        BtnTabDangBai.Foreground = Brushes.Black;
+        BtnTabDangBai.FontWeight = FontWeights.Normal;
+    }
+
+    private void BtnSelectAccountsForPost_Click(object sender, RoutedEventArgs e)
+    {
+        var vm = this.DataContext as MainViewModel;
+        if (vm == null) return;
+        
+        var selectWindow = new SelectAccountWindow(vm.Accounts);
+        selectWindow.Owner = this;
+        if (selectWindow.ShowDialog() == true)
+        {
+            var selected = selectWindow.SelectedAccounts;
+            foreach (var acc in selected)
+            {
+                if (!vm.SelectedAccountsForPost.Any(a => a.Uid == acc.Uid))
+                {
+                    vm.SelectedAccountsForPost.Add(acc);
+                }
+            }
+            
+            // Cập nhật lại số thứ tự
+            for (int i = 0; i < vm.SelectedAccountsForPost.Count; i++)
+            {
+                vm.SelectedAccountsForPost[i].Index = i + 1;
+            }
+        }
+    }
+
+    private void BtnRemovePostAccount_Click(object sender, RoutedEventArgs e)
+    {
+        var button = sender as Button;
+        if (button != null)
+        {
+            var item = button.DataContext as Models.AccountModel;
+            if (item != null)
+            {
+                var vm = this.DataContext as MainViewModel;
+                if (vm != null)
+                {
+                    vm.SelectedAccountsForPost.Remove(item);
+                    for (int i = 0; i < vm.SelectedAccountsForPost.Count; i++)
+                    {
+                        vm.SelectedAccountsForPost[i].Index = i + 1;
+                    }
+                }
+            }
+        }
+    }
+
+    private void BtnSelectMedia_Click(object sender, RoutedEventArgs e)
+    {
+        // Simple folder browser dialog simulation using WinForms or OpenFileDialog
+        var dialog = new Microsoft.Win32.OpenFileDialog();
+        dialog.Title = "Chọn file hình ảnh/video";
+        dialog.Filter = "Image/Video Files|*.jpg;*.jpeg;*.png;*.mp4|All files (*.*)|*.*";
+        if (dialog.ShowDialog() == true)
+        {
+            TxtMediaPath.Text = dialog.FileName;
+        }
+    }
+
+    private async void BtnStartPost_Click(object sender, RoutedEventArgs e)
+    {
+        var vm = this.DataContext as MainViewModel;
+        if (vm == null || vm.SelectedAccountsForPost.Count == 0)
+        {
+            MessageBox.Show("Vui lòng chọn ít nhất một tài khoản để đăng bài.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        
+        TxtLogs.Text = $"[{DateTime.Now.ToString("HH:mm:ss")}] [System]: Bắt đầu tiến trình đăng bài...\n";
+        TxtLogs.ScrollToEnd();
+
+        // Demo logs
+        foreach (var acc in vm.SelectedAccountsForPost)
+        {
+            acc.PostProcessStatus = "Đang chạy";
+            TxtLogs.AppendText($"[{DateTime.Now.ToString("HH:mm:ss")}] [{acc.Uid}]: Khởi động trình duyệt thành công.\n");
+            await System.Threading.Tasks.Task.Delay(1000);
+            TxtLogs.AppendText($"[{DateTime.Now.ToString("HH:mm:ss")}] [{acc.Uid}]: Đăng tải nội dung và hình ảnh.\n");
+            await System.Threading.Tasks.Task.Delay(1500);
+            TxtLogs.AppendText($"[{DateTime.Now.ToString("HH:mm:ss")}] [{acc.Uid}]: Đăng bài thành công!\n");
+            acc.PostProcessStatus = "Xong";
+            TxtLogs.ScrollToEnd();
+        }
+        
+        TxtLogs.AppendText($"[{DateTime.Now.ToString("HH:mm:ss")}] [System]: Hoàn thành tất cả tác vụ đăng bài.\n");
+        TxtLogs.ScrollToEnd();
+    }
+
+    private void BtnStopPost_Click(object sender, RoutedEventArgs e)
+    {
+        TxtLogs.AppendText($"[{DateTime.Now.ToString("HH:mm:ss")}] [System]: Đã dừng tiến trình đăng bài.\n");
+        TxtLogs.ScrollToEnd();
+    }
+
+    private void BtnSelectAccountsForConnect_Click(object sender, RoutedEventArgs e)
+    {
+        var vm = this.DataContext as MainViewModel;
+        if (vm == null) return;
+        
+        var selectWindow = new SelectAccountWindow(vm.Accounts);
+        selectWindow.Owner = this;
+        if (selectWindow.ShowDialog() == true)
+        {
+            var selected = selectWindow.SelectedAccounts;
+            foreach (var acc in selected)
+            {
+                if (!vm.SelectedAccountsForConnect.Any(a => a.Uid == acc.Uid))
+                {
+                    vm.SelectedAccountsForConnect.Add(acc);
+                }
+            }
+            
+            for (int i = 0; i < vm.SelectedAccountsForConnect.Count; i++)
+            {
+                vm.SelectedAccountsForConnect[i].Index = i + 1;
+            }
+        }
+    }
+
+    private void BtnRemoveConnectAccount_Click(object sender, RoutedEventArgs e)
+    {
+        var button = sender as Button;
+        if (button != null)
+        {
+            var item = button.DataContext as Models.AccountModel;
+            if (item != null)
+            {
+                var vm = this.DataContext as MainViewModel;
+                if (vm != null)
+                {
+                    vm.SelectedAccountsForConnect.Remove(item);
+                    for (int i = 0; i < vm.SelectedAccountsForConnect.Count; i++)
+                    {
+                        vm.SelectedAccountsForConnect[i].Index = i + 1;
+                    }
+                }
+            }
+        }
+    }
+
+    private System.Threading.CancellationTokenSource _connectCts;
+
+    private async void BtnStartConnect_Click(object sender, RoutedEventArgs e)
+    {
+        var vm = this.DataContext as MainViewModel;
+        if (vm == null || vm.SelectedAccountsForConnect.Count == 0)
+        {
+            MessageBox.Show("Vui lòng chọn ít nhất một tài khoản để kết nối.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        int threadCount = 1;
+        if (!int.TryParse(TxtConnectThreadCount.Text, out threadCount) || threadCount < 1)
+        {
+            threadCount = 1;
+        }
+
+        int delayMin = 10;
+        int delayMax = 20;
+        int.TryParse(TxtConnectDelayMin.Text, out delayMin);
+        int.TryParse(TxtConnectDelayMax.Text, out delayMax);
+
+        TxtLogsConnect.Text = $"[{DateTime.Now.ToString("HH:mm:ss")}] [System]: Bắt đầu tiến trình kết nối threads với {threadCount} luồng...\n";
+        TxtLogsConnect.ScrollToEnd();
+
+        _connectCts = new System.Threading.CancellationTokenSource();
+        var token = _connectCts.Token;
+
+        var semaphore = new System.Threading.SemaphoreSlim(threadCount);
+        var tasks = new System.Collections.Generic.List<System.Threading.Tasks.Task>();
+        var random = new Random();
+
+        foreach (var acc in vm.SelectedAccountsForConnect)
+        {
+            acc.PostProcessStatus = "Chờ";
+        }
+
+        foreach (var acc in vm.SelectedAccountsForConnect)
+        {
+            await semaphore.WaitAsync();
+
+            if (token.IsCancellationRequested)
+            {
+                semaphore.Release();
+                break;
+            }
+
+            tasks.Add(System.Threading.Tasks.Task.Run(async () =>
+            {
+                try
+                {
+                    Application.Current.Dispatcher.Invoke(() => { acc.PostProcessStatus = "Đang chạy"; });
+                    
+                    var startInfo = new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = "python",
+                        Arguments = $"main.py connect_thread {acc.Uid}",
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        CreateNoWindow = true,
+                        StandardOutputEncoding = System.Text.Encoding.UTF8,
+                        StandardErrorEncoding = System.Text.Encoding.UTF8,
+                        WorkingDirectory = @"d:\starup\pham_dai"
+                    };
+
+                    using (var process = new System.Diagnostics.Process { StartInfo = startInfo })
+                    {
+                        process.OutputDataReceived += (s, ev) =>
+                        {
+                            if (!string.IsNullOrEmpty(ev.Data))
+                            {
+                                if (ev.Data.Contains("[ACCOUNT_DIE]"))
+                                {
+                                    Application.Current.Dispatcher.Invoke(() => { 
+                                        acc.Status = "Die"; 
+                                        acc.PostProcessStatus = "Die";
+                                    });
+                                    return;
+                                }
+                                
+                                Application.Current.Dispatcher.Invoke(() =>
+                                {
+                                    TxtLogsConnect.AppendText($"[{DateTime.Now.ToString("HH:mm:ss")}] [{acc.Uid}]: {ev.Data}\n");
+                                    TxtLogsConnect.ScrollToEnd();
+                                });
+                            }
+                        };
+
+                        process.Start();
+                        process.BeginOutputReadLine();
+
+                        // Wait for process to exit or cancellation
+                        while (!process.HasExited)
+                        {
+                            if (token.IsCancellationRequested)
+                            {
+                                try { process.Kill(); } catch { }
+                                break;
+                            }
+                            await System.Threading.Tasks.Task.Delay(500);
+                        }
+                    }
+
+                    if (token.IsCancellationRequested)
+                    {
+                        Application.Current.Dispatcher.Invoke(() => { acc.PostProcessStatus = "Đã dừng"; });
+                    }
+                    else
+                    {
+                        Application.Current.Dispatcher.Invoke(() => { acc.PostProcessStatus = "Xong"; });
+                    }
+                    
+                    // Delay before next
+                    if (!token.IsCancellationRequested)
+                    {
+                        int delaySec = random.Next(delayMin, delayMax + 1);
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            TxtLogsConnect.AppendText($"[{DateTime.Now.ToString("HH:mm:ss")}] [System]: Đợi {delaySec}s...\n");
+                            TxtLogsConnect.ScrollToEnd();
+                        });
+                        await System.Threading.Tasks.Task.Delay(delaySec * 1000, token);
+                    }
+                }
+                catch (System.OperationCanceledException)
+                {
+                    // Ignore
+                }
+                catch (Exception ex)
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        TxtLogsConnect.AppendText($"[{DateTime.Now.ToString("HH:mm:ss")}] [{acc.Uid}] Lỗi: {ex.Message}\n");
+                        TxtLogsConnect.ScrollToEnd();
+                    });
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            }));
+        }
+
+        await System.Threading.Tasks.Task.WhenAll(tasks);
+
+        if (token.IsCancellationRequested)
+        {
+            TxtLogsConnect.AppendText($"[{DateTime.Now.ToString("HH:mm:ss")}] [System]: Tiến trình bị hủy bởi người dùng.\n");
+        }
+        else
+        {
+            TxtLogsConnect.AppendText($"[{DateTime.Now.ToString("HH:mm:ss")}] [System]: Hoàn thành tất cả tác vụ kết nối.\n");
+        }
+        TxtLogsConnect.ScrollToEnd();
+    }
+
+    private void BtnStopConnect_Click(object sender, RoutedEventArgs e)
+    {
+        if (_connectCts != null && !_connectCts.IsCancellationRequested)
+        {
+            _connectCts.Cancel();
+            TxtLogsConnect.AppendText($"[{DateTime.Now.ToString("HH:mm:ss")}] [System]: Đang dừng tiến trình kết nối threads...\n");
+            TxtLogsConnect.ScrollToEnd();
+        }
     }
 
     private void MenuItem_Copy_Click(object sender, RoutedEventArgs e)

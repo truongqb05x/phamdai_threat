@@ -1,0 +1,28 @@
+<Window x:Class="ThreadsManagerUI.SelectAccountWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Chọn Tài Khoản" Height="450" Width="600" WindowStartupLocation="CenterOwner" Background="#F5F6F8">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <TextBlock Text="Chọn các tài khoản để đưa vào danh sách đăng bài (Có thể chọn nhiều bằng Ctrl hoặc Shift):" FontWeight="SemiBold" Margin="0,0,0,5"/>
+        <CheckBox x:Name="ChkSelectAll" Content="Chọn tất cả" Margin="0,0,0,10" Checked="ChkSelectAll_Checked" Unchecked="ChkSelectAll_Unchecked"/>
+        
+        <DataGrid x:Name="DgAccounts" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" Background="White" GridLinesVisibility="Horizontal" HeadersVisibility="Column" BorderBrush="#E0E0E0" SelectionMode="Extended">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="STT" Binding="{Binding Index}" Width="50" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Username" Binding="{Binding Uid}" Width="150" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Trạng thái" Binding="{Binding Status}" Width="*" IsReadOnly="True"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
+            <Button Content="Hủy bỏ" Padding="15,8" Margin="0,0,10,0" Background="White" BorderBrush="#CCCCCC" Click="BtnCancel_Click"/>
+            <Button Content="Xác nhận" Padding="15,8" Background="#1877F2" Foreground="White" BorderThickness="0" FontWeight="Bold" Click="BtnConfirm_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>
