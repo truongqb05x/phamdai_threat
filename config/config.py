@@ -12,5 +12,5 @@ CHROMEDRIVER_PATH = "resources/chromedriver.exe"
 RESOURCE_LOGGING = False
 
 # Tải hình ảnh khi chạy trình duyệt
-LOAD_IMAGES = False
+LOAD_IMAGES = True
 PROXY_TYPE = 1

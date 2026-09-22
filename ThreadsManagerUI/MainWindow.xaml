@@ -17,7 +17,7 @@
         <Border Grid.Row="0" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Background="White">
             <StackPanel Orientation="Horizontal" Margin="10,5">
                 <Button x:Name="BtnTabKetNoi" Content="Home" Padding="15,8" Background="#1877F2" Foreground="White" BorderThickness="0" Margin="0,0,5,0" FontWeight="Bold" Click="BtnTabKetNoi_Click"/>
-                <Button x:Name="BtnTabDangBai" Content="Đăng Bài (Post)" Padding="15,8" Background="Transparent" Foreground="Black" BorderThickness="0" Margin="0,0,5,0" FontWeight="Normal" Click="BtnTabDangBai_Click"/>
+                <Button x:Name="BtnTabDangBai" Content="Đăng Bài" Padding="15,8" Background="Transparent" Foreground="Black" BorderThickness="0" Margin="0,0,5,0" FontWeight="Normal" Click="BtnTabDangBai_Click"/>
                 <Button x:Name="BtnTabConnectThreads" Content="Kết nối thread" Padding="15,8" Background="Transparent" Foreground="Black" BorderThickness="0" Margin="0,0,5,0" FontWeight="Normal" Click="BtnTabConnectThreads_Click"/>
                 <Button Content="Cấu Hình Hệ Thống" Padding="15,8" Background="Transparent" BorderThickness="0"/>
             </StackPanel>
@@ -319,30 +319,93 @@
 
                         <!-- Panel Cấu hình -->
                         <StackPanel Grid.Row="0" Margin="15">
-                            <TextBlock Text="Nội dung bài đăng:" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#333"/>
-                            <TextBox x:Name="TxtPostContent" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="100" Padding="10" BorderBrush="#CCCCCC" Margin="0,0,0,15" Background="#F5F5F5"/>
+                            <TextBlock Text="Nguồn nội dung:" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#333"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                <RadioButton x:Name="RbSourceExcel" Content="Nhập từ file Excel" IsChecked="True" Margin="0,0,15,0" Checked="RbSourceExcel_Checked"/>
+                                <RadioButton x:Name="RbSourceGemini" Content="Tạo bằng Gemini" Checked="RbSourceGemini_Checked"/>
+                            </StackPanel>
 
-                            <TextBlock Text="Hình ảnh/Video (Thư mục hoặc File):" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#333"/>
+                            <!-- Panel Excel -->
+                            <StackPanel x:Name="PanelExcel" Visibility="Visible">
+                                <TextBlock Text="File Excel (Có cột STT và Nội dung):" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#333"/>
+                                <Grid Margin="0,0,0,15">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="TxtExcelPath" Padding="8" BorderBrush="#CCCCCC" Background="#F5F5F5" Grid.Column="0"/>
+                                    <Button Content="Chọn file" Grid.Column="1" Margin="5,0,0,0" Padding="15,0" Click="BtnSelectExcel_Click"/>
+                                </Grid>
+                            </StackPanel>
+
+                            <!-- Panel Gemini -->
+                            <StackPanel x:Name="PanelGemini" Visibility="Collapsed">
+                                <TextBlock Text="Gemini API Key:" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#333"/>
+                                <TextBox x:Name="TxtGeminiKey" Padding="8" BorderBrush="#CCCCCC" Background="#F5F5F5" Margin="0,0,0,10"/>
+                                <TextBlock Text="Chủ đề / Prompt cho Gemini:" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#333"/>
+                                <TextBox x:Name="TxtGeminiPrompt" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="80" Padding="10" BorderBrush="#CCCCCC" Margin="0,0,0,15" Background="#F5F5F5"/>
+                            </StackPanel>
+
                             <Grid Margin="0,0,0,15">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="15"/>
+                                    <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBox x:Name="TxtMediaPath" Padding="8" BorderBrush="#CCCCCC" Background="#F5F5F5" Grid.Column="0"/>
-                                <Button Content="Chọn" Grid.Column="1" Margin="5,0,0,0" Padding="15,0" Click="BtnSelectMedia_Click"/>
+
+                                <!-- Cột Hình ảnh/Video -->
+                                <StackPanel Grid.Column="0">
+                                    <CheckBox x:Name="ChkUseMedia" Content="Kèm Hình ảnh/Video:" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#333" IsChecked="False"/>
+                                    <Grid IsEnabled="{Binding IsChecked, ElementName=ChkUseMedia}">
+                                        <Grid.Style>
+                                            <Style TargetType="Grid">
+                                                <Setter Property="Opacity" Value="1.0" />
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsEnabled" Value="False">
+                                                        <Setter Property="Opacity" Value="0.5" />
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Grid.Style>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="TxtMediaPath" Height="60" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Padding="8" BorderBrush="#CCCCCC" Background="#F5F5F5" Grid.Column="0"/>
+                                        <Button Content="Chọn" Grid.Column="1" Margin="5,0,0,0" Padding="15,0" Click="BtnSelectMedia_Click"/>
+                                    </Grid>
+                                </StackPanel>
+
+                                <!-- Cột Hashtag -->
+                                <StackPanel Grid.Column="2">
+                                    <CheckBox x:Name="ChkUseHashtag" Content="Thêm Hashtag:" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#333" IsChecked="False"/>
+                                    <Border IsEnabled="{Binding IsChecked, ElementName=ChkUseHashtag}">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Opacity" Value="1.0" />
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsEnabled" Value="False">
+                                                        <Setter Property="Opacity" Value="0.5" />
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBox x:Name="TxtHashtags" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="60" Padding="10" BorderBrush="#CCCCCC" Background="#F5F5F5"/>
+                                    </Border>
+                                </StackPanel>
                             </Grid>
 
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Khoảng cách giữa 2 bài đăng:" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,10,0"/>
-                                <TextBox x:Name="TxtDelayMin" Text="10" Width="50" Padding="5" TextAlignment="Center"/>
+                                <TextBlock Text="Khoảng cách giữa 2 bài đăng:" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,10,0" Foreground="#333"/>
+                                <TextBox x:Name="TxtDelayMin" Text="10" Width="40" Padding="5" TextAlignment="Center"/>
                                 <TextBlock Text="đến" VerticalAlignment="Center" Margin="5,0"/>
-                                <TextBox x:Name="TxtDelayMax" Text="20" Width="50" Padding="5" TextAlignment="Center"/>
+                                <TextBox x:Name="TxtDelayMax" Text="20" Width="40" Padding="5" TextAlignment="Center"/>
                                 <TextBlock Text="giây" VerticalAlignment="Center" Margin="5,0"/>
-                            </StackPanel>
+                                
+                                <TextBlock Text="|" VerticalAlignment="Center" Margin="15,0" Foreground="#CCCCCC" FontWeight="Bold"/>
 
-                            <StackPanel Orientation="Horizontal" Margin="0,15,0,0">
-                                <TextBlock Text="Số luồng (Threads):" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,10,0"/>
-                                <TextBox x:Name="TxtThreadCount" Text="1" Width="50" Padding="5" TextAlignment="Center"/>
+                                <TextBlock Text="Số luồng (Threads):" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,10,0" Foreground="#333"/>
+                                <TextBox x:Name="TxtThreadCount" Text="1" Width="40" Padding="5" TextAlignment="Center"/>
                             </StackPanel>
                         </StackPanel>
 
@@ -447,16 +510,16 @@
                         <!-- Panel Cấu hình -->
                         <StackPanel Grid.Row="0" Margin="15">
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                                <TextBlock Text="Khoảng cách giữa 2 tài khoản:" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,10,0"/>
-                                <TextBox x:Name="TxtConnectDelayMin" Text="10" Width="50" Padding="5" TextAlignment="Center"/>
+                                <TextBlock Text="Khoảng cách giữa 2 tài khoản:" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,10,0" Foreground="#333"/>
+                                <TextBox x:Name="TxtConnectDelayMin" Text="10" Width="40" Padding="5" TextAlignment="Center"/>
                                 <TextBlock Text="đến" VerticalAlignment="Center" Margin="5,0"/>
-                                <TextBox x:Name="TxtConnectDelayMax" Text="20" Width="50" Padding="5" TextAlignment="Center"/>
+                                <TextBox x:Name="TxtConnectDelayMax" Text="20" Width="40" Padding="5" TextAlignment="Center"/>
                                 <TextBlock Text="giây" VerticalAlignment="Center" Margin="5,0"/>
-                            </StackPanel>
 
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Số luồng (Threads):" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,10,0"/>
-                                <TextBox x:Name="TxtConnectThreadCount" Text="1" Width="50" Padding="5" TextAlignment="Center"/>
+                                <TextBlock Text="|" VerticalAlignment="Center" Margin="15,0" Foreground="#CCCCCC" FontWeight="Bold"/>
+
+                                <TextBlock Text="Số luồng (Threads):" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,10,0" Foreground="#333"/>
+                                <TextBox x:Name="TxtConnectThreadCount" Text="1" Width="40" Padding="5" TextAlignment="Center"/>
                             </StackPanel>
                         </StackPanel>
 

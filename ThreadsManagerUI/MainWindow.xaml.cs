@@ -240,6 +240,38 @@ public partial class MainWindow : Window
         BtnTabConnectThreads.FontWeight = FontWeights.Normal;
     }
 
+    private void RbSourceExcel_Checked(object sender, RoutedEventArgs e)
+    {
+        if (PanelExcel != null && PanelGemini != null)
+        {
+            PanelExcel.Visibility = Visibility.Visible;
+            PanelGemini.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private void RbSourceGemini_Checked(object sender, RoutedEventArgs e)
+    {
+        if (PanelExcel != null && PanelGemini != null)
+        {
+            PanelExcel.Visibility = Visibility.Collapsed;
+            PanelGemini.Visibility = Visibility.Visible;
+        }
+    }
+
+    private void BtnSelectExcel_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Chọn file Excel",
+            Filter = "Excel Files|*.xls;*.xlsx;*.xlsm;*.csv|All Files|*.*"
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            TxtExcelPath.Text = dialog.FileName;
+        }
+    }
+
     private void BtnTabConnectThreads_Click(object sender, RoutedEventArgs e)
     {
         GridKetNoiThreads.Visibility = Visibility.Collapsed;
@@ -311,12 +343,15 @@ public partial class MainWindow : Window
         // Simple folder browser dialog simulation using WinForms or OpenFileDialog
         var dialog = new Microsoft.Win32.OpenFileDialog();
         dialog.Title = "Chọn file hình ảnh/video";
+        dialog.Multiselect = true;
         dialog.Filter = "Image/Video Files|*.jpg;*.jpeg;*.png;*.mp4|All files (*.*)|*.*";
         if (dialog.ShowDialog() == true)
         {
-            TxtMediaPath.Text = dialog.FileName;
+            TxtMediaPath.Text = string.Join("\n", dialog.FileNames);
         }
     }
+
+    private System.Threading.CancellationTokenSource _postCts;
 
     private async void BtnStartPost_Click(object sender, RoutedEventArgs e)
     {
@@ -326,31 +361,162 @@ public partial class MainWindow : Window
             MessageBox.Show("Vui lòng chọn ít nhất một tài khoản để đăng bài.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
-        
-        TxtLogs.Text = $"[{DateTime.Now.ToString("HH:mm:ss")}] [System]: Bắt đầu tiến trình đăng bài...\n";
+
+        int threadCount = 1;
+        if (!int.TryParse(TxtThreadCount.Text, out threadCount) || threadCount < 1)
+        {
+            threadCount = 1;
+        }
+
+        int delayMin = 10;
+        int delayMax = 20;
+        int.TryParse(TxtDelayMin.Text, out delayMin);
+        int.TryParse(TxtDelayMax.Text, out delayMax);
+
+        string contentSource = RbSourceGemini.IsChecked == true ? "2" : "1";
+        string apiPrompt = TxtGeminiPrompt.Text.Trim();
+        string hashtagText = ChkUseHashtag.IsChecked == true ? TxtHashtags.Text.Trim() : "";
+        string mediaPathsStr = "";
+        if (ChkUseMedia.IsChecked == true)
+        {
+            mediaPathsStr = string.Join("|", TxtMediaPath.Text.Split(new[] { '\n', '\r' }, System.StringSplitOptions.RemoveEmptyEntries));
+        }
+
+        TxtLogs.Text = $"[{DateTime.Now.ToString("HH:mm:ss")}] [System]: Bắt đầu tiến trình đăng bài với {threadCount} luồng...\n";
         TxtLogs.ScrollToEnd();
 
-        // Demo logs
+        _postCts = new System.Threading.CancellationTokenSource();
+        var token = _postCts.Token;
+
+        var semaphore = new System.Threading.SemaphoreSlim(threadCount);
+        var tasks = new System.Collections.Generic.List<System.Threading.Tasks.Task>();
+        var random = new Random();
+
         foreach (var acc in vm.SelectedAccountsForPost)
         {
-            acc.PostProcessStatus = "Đang chạy";
-            TxtLogs.AppendText($"[{DateTime.Now.ToString("HH:mm:ss")}] [{acc.Uid}]: Khởi động trình duyệt thành công.\n");
-            await System.Threading.Tasks.Task.Delay(1000);
-            TxtLogs.AppendText($"[{DateTime.Now.ToString("HH:mm:ss")}] [{acc.Uid}]: Đăng tải nội dung và hình ảnh.\n");
-            await System.Threading.Tasks.Task.Delay(1500);
-            TxtLogs.AppendText($"[{DateTime.Now.ToString("HH:mm:ss")}] [{acc.Uid}]: Đăng bài thành công!\n");
-            acc.PostProcessStatus = "Xong";
-            TxtLogs.ScrollToEnd();
+            acc.PostProcessStatus = "Chờ";
         }
-        
-        TxtLogs.AppendText($"[{DateTime.Now.ToString("HH:mm:ss")}] [System]: Hoàn thành tất cả tác vụ đăng bài.\n");
+
+        foreach (var acc in vm.SelectedAccountsForPost)
+        {
+            await semaphore.WaitAsync();
+
+            if (token.IsCancellationRequested)
+            {
+                semaphore.Release();
+                break;
+            }
+
+            tasks.Add(System.Threading.Tasks.Task.Run(async () =>
+            {
+                try
+                {
+                    Application.Current.Dispatcher.Invoke(() => { acc.PostProcessStatus = "Đang chạy"; });
+                    
+                    string safeApiPrompt = "\"" + apiPrompt.Replace("\"", "\\\"") + "\"";
+                    string safeHashtagText = "\"" + hashtagText.Replace("\"", "\\\"") + "\"";
+                    string safeMediaPathsStr = "\"" + mediaPathsStr.Replace("\"", "\\\"") + "\"";
+
+                    var startInfo = new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = "python",
+                        Arguments = $"main.py post_thread {acc.Uid} \"{contentSource}\" {safeApiPrompt} {safeHashtagText} {safeMediaPathsStr}",
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        CreateNoWindow = true,
+                        StandardOutputEncoding = System.Text.Encoding.UTF8,
+                        StandardErrorEncoding = System.Text.Encoding.UTF8,
+                        WorkingDirectory = @"d:\starup\pham_dai"
+                    };
+
+                    using (var process = new System.Diagnostics.Process { StartInfo = startInfo })
+                    {
+                        process.OutputDataReceived += (s, ev) =>
+                        {
+                            if (!string.IsNullOrEmpty(ev.Data))
+                            {
+                                Application.Current.Dispatcher.Invoke(() =>
+                                {
+                                    TxtLogs.AppendText($"[{DateTime.Now.ToString("HH:mm:ss")}] [{acc.Uid}]: {ev.Data}\n");
+                                    TxtLogs.ScrollToEnd();
+                                });
+                            }
+                        };
+
+                        process.Start();
+                        process.BeginOutputReadLine();
+
+                        while (!process.HasExited)
+                        {
+                            if (token.IsCancellationRequested)
+                            {
+                                try { process.Kill(); } catch { }
+                                break;
+                            }
+                            await System.Threading.Tasks.Task.Delay(500);
+                        }
+                    }
+
+                    if (token.IsCancellationRequested)
+                    {
+                        Application.Current.Dispatcher.Invoke(() => { acc.PostProcessStatus = "Đã dừng"; });
+                    }
+                    else
+                    {
+                        Application.Current.Dispatcher.Invoke(() => { acc.PostProcessStatus = "Xong"; });
+                    }
+                    
+                    if (!token.IsCancellationRequested)
+                    {
+                        int delaySec = random.Next(delayMin, delayMax + 1);
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            TxtLogs.AppendText($"[{DateTime.Now.ToString("HH:mm:ss")}] [System]: Đợi {delaySec}s...\n");
+                            TxtLogs.ScrollToEnd();
+                        });
+                        await System.Threading.Tasks.Task.Delay(delaySec * 1000, token);
+                    }
+                }
+                catch (System.OperationCanceledException)
+                {
+                }
+                catch (Exception ex)
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        TxtLogs.AppendText($"[{DateTime.Now.ToString("HH:mm:ss")}] [{acc.Uid}] Lỗi: {ex.Message}\n");
+                        TxtLogs.ScrollToEnd();
+                    });
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            }));
+        }
+
+        await System.Threading.Tasks.Task.WhenAll(tasks);
+
+        if (token.IsCancellationRequested)
+        {
+            TxtLogs.AppendText($"[{DateTime.Now.ToString("HH:mm:ss")}] [System]: Tiến trình bị hủy bởi người dùng.\n");
+        }
+        else
+        {
+            TxtLogs.AppendText($"[{DateTime.Now.ToString("HH:mm:ss")}] [System]: Hoàn thành tất cả tác vụ đăng bài.\n");
+        }
         TxtLogs.ScrollToEnd();
     }
 
     private void BtnStopPost_Click(object sender, RoutedEventArgs e)
     {
-        TxtLogs.AppendText($"[{DateTime.Now.ToString("HH:mm:ss")}] [System]: Đã dừng tiến trình đăng bài.\n");
-        TxtLogs.ScrollToEnd();
+        if (_postCts != null && !_postCts.IsCancellationRequested)
+        {
+            _postCts.Cancel();
+            TxtLogs.AppendText($"[{DateTime.Now.ToString("HH:mm:ss")}] [System]: Đang dừng tiến trình đăng bài...\n");
+            TxtLogs.ScrollToEnd();
+        }
     }
 
     private void BtnSelectAccountsForConnect_Click(object sender, RoutedEventArgs e)
